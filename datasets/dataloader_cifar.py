@@ -19,10 +19,10 @@ def unpickle(file):
 
 class cifar_dataset(Dataset):
     def __init__(self, dataset, noisy_dataset, root_dir, noise_data_dir, transform,  noise_mode='sym',
-                 dataset_mode='train', noise_ratio=0.5, open_ratio=0.5, noise_file=None):
+                 dataset_mode='train', noise_ratio=0.5,  noise_file=None):
 
         self.r = noise_ratio  # total noise ratio
-        self.on = open_ratio  # proportion of open noise
+        #self.on = open_ratio  # proportion of open noise
         self.transform = transform
         self.mode = dataset_mode
         self.transition = {0: 0, 2: 0, 4: 7, 7: 7, 1: 1, 9: 1, 3: 5, 5: 3, 6: 6, 8: 8}  # class transition for asymmetric noise

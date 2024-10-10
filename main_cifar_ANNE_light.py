@@ -21,7 +21,7 @@ parser.add_argument('--noisy_dataset', default='cifar100', help='open-set noise 
 # dataset settings
 parser.add_argument('--noise_mode', default='sym', type=str, help='artifical noise mode (default: symmetric)')
 parser.add_argument('--noise_ratio', default=0.5, type=float, help='artifical noise ratio (default: 0.5)')
-parser.add_argument('--open_ratio', default=0.0, type=float, help='artifical noise ratio (default: 0.0)')
+#parser.add_argument('--open_ratio', default=0.0, type=float, help='artifical noise ratio (default: 0.0)')
 
 # model settings
 parser.add_argument('--theta_s', default=1.0, type=float, help='threshold for selecting samples (default: 1)')
@@ -54,7 +54,6 @@ parser.add_argument('--p_threshold', default=0.5, type=float, help='clean probab
 parser.add_argument('--ssrset', type=str, default='full', choices=['full','lcs'], help='mode for distillation kmeans or eigen.')
 parser.add_argument('--kmin1', default=40, type=int, metavar='N', help='kmin1')
 parser.add_argument('--kmin2', default=80, type=int, metavar='N', help='kmin2')
-# parser.add_argument('--operation', type=str, default='inter', choices=['inter','union','union_fine_g1', 'union_fine_g1_g2','union_fine_g3_g4', 'union_fine_g1_g2_g3', 'union_fine_g2_g3_g4', 'sr', 'srbm'], help='mode for selection.')
 
 
 def train(labeled_trainloader, modified_label, all_trainloader, encoder, classifier, proj_head, pred_head, optimizer, epoch, args):
@@ -68,12 +67,11 @@ def train(labeled_trainloader, modified_label, all_trainloader, encoder, classif
     all_bar = tqdm(all_trainloader)
     for batch_idx, ([inputs_u1, inputs_u2], _, _, _) in enumerate(all_bar):
         try:
-            # import pdb;pdb.set_trace()
-            # [inputs_x1, inputs_x2], labels_x, _, index = labeled_train_iter.next()
+            
             [inputs_x1, inputs_x2], labels_x, _, index = next(labeled_train_iter)
         except:
             labeled_train_iter = iter(labeled_trainloader)
-            #[inputs_x1, inputs_x2], labels_x, _, index = labeled_train_iter.next()
+            
             [inputs_x1, inputs_x2], labels_x, _, index = next(labeled_train_iter)
 
         # cross-entropy training with mixup
@@ -114,8 +112,6 @@ def train(labeled_trainloader, modified_label, all_trainloader, encoder, classif
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-    # logger.log({'ce loss': xlosses.avg, 'fc loss': ulosses.avg, 'epoch':epoch})
-
 
 def test(testloader, encoder, classifier, epoch):
     encoder.eval()
@@ -131,7 +127,6 @@ def test(testloader, encoder, classifier, epoch):
             acc = torch.sum(pred == label) / float(data.size(0))
             accuracy.update(acc.item(), data.size(0))
             data_bar.set_description(f'Test epoch {epoch}: Accuracy#{accuracy.avg:.4f}')
-    # logger.log({'acc': accuracy.avg, 'epoch':epoch})
     return accuracy.avg
 
 
@@ -172,16 +167,8 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
                 }
         
             ################################### sample selection ###################################
-            # prediction_knn = weighted_knn(feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10)  # temperature in weighted KNN
-            # prediction_knn, knn_min, knn_max, knn_mean, knn_std = weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto)  # temperature in weighted KNN
-            #prediction_knn, knn_min, knn_max, knn_mean, knn_std = weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k, 100, radius = args.radius, rule=args.rule, conf=his_score, knnweight=args.knnweight, radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto )  # temperature in weighted KNN
-            #prediction_knn, knn_min, knn_max, knn_mean, knn_std = fast_weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto )  # temperature in weighted KNN
-            
-
             aknn_ids = torch.cat((otsu_split['maybe_noisy_ids'].squeeze(), otsu_split['noisy_ids'].squeeze()))
-            # fine_ids = torch.cat((otsu_split['clean_ids'].squeeze(), otsu_split['maybe_clean_ids'].squeeze()))
 
-            #prediction_knn = fast_weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto )  # temperature in weighted KNN
             if args.ssrset == "full":
                 prediction_knn = fast_weighted_knn_ball(i, feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
                 vote_y = torch.gather(prediction_knn, 1, modified_label[aknn_ids].view(-1, 1)).squeeze()
@@ -193,8 +180,6 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
             prediction_knn = weighted_knn(feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10)
             vote_y = torch.gather(prediction_knn, 1, modified_label.view(-1, 1)).squeeze()
 
-        #vote_y = torch.gather(prediction_knn, 1, modified_label.view(-1, 1)).squeeze()
-        # vote_y = torch.gather(prediction_knn, 1, modified_label[aknn_ids].view(-1, 1)).squeeze()
         vote_max = prediction_knn.max(dim=1)[0]
         right_score = vote_y / vote_max
         temp_clean_id = torch.where(right_score >= args.theta_s)[0]
@@ -207,58 +192,20 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
             clean_id = temp_clean_id
             noisy_id = temp_noisy_id
             
-            
-
-        #choice: none(-1)/  ssr(0)/ fine(1)
-        choice_sr_g1g2=  -1
-        choice_sr_g3g4=  -1
-        fine_g1g2_sr = 0
-        fine_g3g4_sr = 0
-        ssr_g1g2_sr = 0
-        ssr_g3g4_sr = 0
 
 
         #fine
         if i>=args.warmup:
             
             temp_modified_label = modified_label.clone().cpu().detach().numpy()
-            # temp_modified_label = modified_label[fine_ids].clone().cpu().detach().numpy()
-            #teacher_idx_1, _, _ = extract_cleanidx(feature_bank.cpu(), temp_modified_label, mode=args.distill_mode, p_threshold=args.p_threshold)
-            #teacher_idx_1, _, _ = extract_cleanidx(feature_bank.cpu(), temp_modified_label, mode=args.distill_mode, p_threshold=args.p_threshold)
-            teacher_idx_1, _, _ = extract_cleanidx(feature_bank.cpu(), temp_modified_label, mode=args.distill_mode, p_threshold=args.p_threshold)
-            # import pdb; pdb.set_trace()
-            # teacher_idx_1, _, _ = extract_cleanidx(feature_bank[fine_ids].cpu(), temp_modified_label, mode=args.distill_mode, p_threshold=args.p_threshold)
-
-            # if args.operation == "inter":
-            #     # import pdb; pdb.set_trace()
-            #     clean_id = [idx for idx in clean_id if idx in teacher_idx_1.cuda()]
-            #     clean_id = torch.tensor(clean_id).cuda()
-            #     # import pdb; pdb.set_trace()
-
-            # elif args.operation == "union":
-            #     #temp_id = []
-                
-            #     # temp_id = clean_id
-            #     temp_id = clean_id.cpu().numpy().tolist()
-            #     # for idx in teacher_idx_1.cuda():
-            #     for idx in teacher_idx_1:
-            #         #if idx.item() not in clean_id:
-            #         if idx.item() not in temp_id:
-            #             temp_id.append(idx.item())
-            #     clean_id = torch.tensor(temp_id).cuda()
-            #     # import pdb; pdb.set_trace()
             
-            #elif args.operation == "union_fine_g1_g2":
-            # if True:
-                
+            teacher_idx_1, _, _ = extract_cleanidx(feature_bank.cpu(), temp_modified_label, mode=args.distill_mode, p_threshold=args.p_threshold)    
             temp_id = [idx for idx in clean_id.cpu().numpy().tolist() if (idx in otsu_split['maybe_noisy_ids']) or (idx in otsu_split['noisy_ids'])  ]
-            
-            # temp_id = clean_id.cpu().numpy().tolist()
 
             for idx in teacher_idx_1:
                 if (idx.item() in otsu_split['clean_ids']) or (idx.item() in otsu_split['maybe_clean_ids']):
                     temp_id.append(idx.item())
-                # temp_id.append(fine_ids[idx])
+                
             clean_id = torch.tensor(temp_id).cuda()
 
 
@@ -268,21 +215,17 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
         TN = torch.sum(modified_label[noisy_id] != clean_label[noisy_id])
         FN = torch.sum(modified_label[noisy_id] == clean_label[noisy_id])
         print(f'Epoch [{i}/{args.epochs}] selection: theta_s:{args.theta_s} TP: {TP} FP:{FP} TN:{TN} FN:{FN}')
-        # logger.log({'TP': TP, 'FP': FP, 'TN': TN, 'FN': FN, 'epoch':i})
+        
 
         correct = torch.sum(modified_label[conf_id] == clean_label[conf_id])
         orginal = torch.sum(noisy_label[conf_id] == clean_label[conf_id])
         all = len(conf_id)
-        # logger.log({'correct': correct, 'original': orginal, 'total': all, 'epoch':i})
+        
         print(f'Epoch [{i}/{args.epochs}] relabelling:  correct: {correct} original: {orginal} total: {all}')
 
         stat_logs.write(f'Epoch [{i}/{args.epochs}] selection: theta_s:{args.theta_s} TP: {TP} FP:{FP} TN:{TN} FN:{FN}\n')
         stat_logs.write(f'Epoch [{i}/{args.epochs}] relabelling:  correct: {correct} original: {orginal} total: {all}\n')
         stat_logs.flush()
-
-        precision = max(TP/(TP+FP), 0.000001)
-        recall = max( TP/(TP+FN+0.000001), 0.000001)
-        
 
         TP_ids = {'all':[], 'g1g2':[], 'g3g4':[]}
         FP_ids = {'all':[], 'g1g2':[], 'g3g4':[]}
@@ -319,58 +262,7 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
                             TN_ids['g1g2'].append(idx_temp)
                         elif (idx_temp in otsu_split['maybe_noisy_ids'].squeeze()) or (idx_temp in otsu_split['noisy_ids'].squeeze()):
                             TN_ids['g3g4'].append(idx_temp)
-
-            g1g2_precision = max(len(TP_ids['g1g2'])/(len(TP_ids['g1g2'])+len(FP_ids['g1g2'])), 0.000001)
-            #g1g2_recall = max(len(TP_ids['g1g2'])/(len(TP_ids['g1g2'])+len(FN_ids['g1g2'])), 0.000001)
-            g1g2_recall = max(len(TP_ids['g1g2'])/max(len(TP_ids['g1g2'])+len(FN_ids['g1g2']), 0.000001), 0.000001)
-
-
-            g3g4_precision = max(len(TP_ids['g3g4'])/(len(TP_ids['g3g4'])+len(FP_ids['g3g4'])), 0.000001)
-            g3g4_recall = max(len(TP_ids['g3g4'])/(len(TP_ids['g3g4'])+len(FN_ids['g3g4'])), 0.000001)
-                
-                
-
-
-            # wandb.log({"selection/TP":TP,
-            #            "selection/FP":FP,
-            #            "selection/TN":TN,
-            #            "selection/FN":FN,
-            #            "selection/size": len(clean_id),
-            #            "selection/clean_rate": 100*TP/(TP+FP),
-            #         #    "selection/knn_min": knn_min,
-            #         #    "selection/knn_max": knn_max,
-            #            "relabelling/num_modified": all,
-            #            "relabelling/true_before":orginal,
-            #            "relabelling/true_after":correct,
-            #            "relabelling/clean_rate_after":100*correct/all,
-            #            "relabelling/clean_rate_before":100*orginal/all,
-            #            "epoch":i,
-            #            "selection/precision": precision,
-            #            "selection/recall": recall,
-            #            "selection/f1": 2*(precision*recall)/(precision+recall),
-            #            "selection/g1g2_TP":len(TP_ids['g1g2']),
-            #            "selection/g1g2_FP":len(FP_ids['g1g2']),
-            #            "selection/g1g2_TN":len(TN_ids['g1g2']),
-            #            "selection/g1g2_FN":len(FN_ids['g1g2']),
-            #            "selection/g1g2_precision":g1g2_precision,
-            #            "selection/g1g2_recall":g1g2_recall,
-            #            "selection/g1g2_f1":2*(g1g2_precision*g1g2_recall)/(g1g2_precision+g1g2_recall),
-            #            "selection/g3g4_TP":len(TP_ids['g3g4']),
-            #            "selection/g3g4_FP":len(FP_ids['g3g4']),
-            #            "selection/g3g4_TN":len(TN_ids['g3g4']),
-            #            "selection/g3g4_FN":len(FN_ids['g3g4']),
-            #            "selection/g3g4_precision":g3g4_precision,
-            #            "selection/g3g4_recall":g3g4_recall,
-            #            "selection/g3g4_f1":2*(g3g4_precision*g3g4_recall)/(g3g4_precision+g3g4_recall),
-            #            "choice_sr_g1g2": choice_sr_g1g2,
-            #            "choice_sr_g3g4": choice_sr_g3g4,
-            #            "fine_g1g2_sr": fine_g1g2_sr,
-            #            "fine_g3g4_sr": fine_g3g4_sr,
-            #            "ssr_g1g2_sr": ssr_g1g2_sr,
-            #            "ssr_g3g4_sr": ssr_g3g4_sr
-                        
-            # })
-    #return clean_id, noisy_id, modified_label
+    
     return clean_id, None, modified_label
 
 def get_singular_vector(features, labels):
@@ -457,7 +349,7 @@ def fine(current_features, current_labels, fit = 'kmeans', prev_features=None, p
         singular_vector_dict = get_singular_vector(prev_features, prev_labels)
     else:
         singular_vector_dict = get_singular_vector(current_features, current_labels)
-    # import pdb; pdb.set_trace()
+    
     scores = get_score(singular_vector_dict, features = current_features, labels = current_labels)
     
     if 'kmeans' in fit:
@@ -490,7 +382,7 @@ def cleansing(scores, labels):
         
     return np.array(clean_labels, dtype=np.int64)
     
-#def extract_cleanidx(model, loader, mode='fine-kmeans', p_threshold=0.6):
+
 def extract_cleanidx(features, labels, mode='fine-kmeans', p_threshold=0.6):
     # model.eval()
     scores=None
@@ -504,56 +396,22 @@ def extract_cleanidx(features, labels, mode='fine-kmeans', p_threshold=0.6):
     #     teacher_idx = get_loss_list(model, loader)
     #     probs = None
         
-    # for params in model.parameters(): params.requires_grad = True
-    # model.train()
+    
     
     teacher_idx = torch.tensor(teacher_idx)
     return teacher_idx, probs, scores
-
-# def get_loss_list(model, data_loader):
-#     loss_list = np.empty((0,))
-
-#     with tqdm(data_loader) as progress:
-#         for batch_idx, (data, label, index) in enumerate(progress):
-#             data = data.cuda()
-#             label = label.long().cuda()
-
-#             prediction = model(data)
-#             loss = torch.nn.CrossEntropyLoss(reduction='none')(prediction, label)
-
-#             loss_list = np.concatenate((loss_list, loss.detach().cpu()))
-    
-#     kmeans = cluster.KMeans(n_clusters=2, random_state=0).fit(loss_list.reshape(-1,1))
-    
-#     if np.mean(loss_list[kmeans.labels_==0]) > np.mean(loss_list[kmeans.labels_==1]):
-#         clean_label = 1
-#     else:
-#         clean_label = 0
-    
-#     output=[]
-#     for idx, value in enumerate(kmeans.labels_):
-#         if value==clean_label:
-#             output.append(idx)
-    
-#     return output
 
 
 def main():
     args = parser.parse_args()
     seed_everything(args.seed)
+    
     if args.run_path is None:
-        args.run_path = f'Dataset({args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode})_Model({args.theta_r}_{args.theta_s})'
+        #args.run_path = f'Dataset({args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode})_Model({args.theta_r}_{args.theta_s})'
+        args.run_path = f'Dataset({args.dataset}_{args.noise_ratio}_{args.noise_mode})_Model({args.theta_r}_{args.theta_s})'
         args.run_path = args.exp_name
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpuid
-    # global logger
-    
-    #logger = wandb.init(project="noisy_labels",entity=args.entity, name=args.exp_name, allow_val_change=True)
-    #logger.config.update(args)
-    # if args.open_ratio == 0:
-    #     logger.config.update({"dataset": f"{args.dataset}"}, allow_val_change=True)
-    # else:
-    #     logger.config.update({"dataset": f"{args.dataset}+open_{args.noisy_dataset}"}, allow_val_change=True)
 
     # generate noisy dataset with our transformation
     if not os.path.isdir(f'{args.dataset}'):
@@ -589,32 +447,33 @@ def main():
     # generate train dataset with only filtered clean subset
     train_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path,
                                noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
-                               transform=KCropsTransform(strong_transform, 2), open_ratio=args.open_ratio,
+                               #transform=KCropsTransform(strong_transform, 2), open_ratio=args.open_ratio,
+                               transform=KCropsTransform(strong_transform, 2), 
                                dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,
-                               noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
-                               #noise_file='%s/%.2f_%s.json'%(args.dataset_path,args.noise_ratio,args.noise_mode))
-                            #    noise_file='../noise/%.2f_%s.json'%(args.noise_ratio,args.noise_mode))
+                               #noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
+                               noise_file=f'{args.dataset}_{args.noise_ratio}_{args.noise_mode}_noise.json')
+                               
     eval_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path, transform=weak_transform,
                               noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
                               dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,
-                              open_ratio=args.open_ratio,
-                              noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
-                            # noise_file='%s/%.2f_%s.json'%(args.dataset_path,args.noise_ratio,args.noise_mode))
-                            # noise_file='../noise/%.2f_%s.json'%(args.noise_ratio,args.noise_mode))
+                              #open_ratio=args.open_ratio,
+                              #noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
+                              noise_file=f'{args.dataset}_{args.noise_ratio}_{args.noise_mode}_noise.json')
+                            
     test_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path, transform=none_transform,
                               noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
                               dataset_mode='test')
     all_data = cifar_dataset(dataset=args.dataset, root_dir=args.dataset_path,
                                    noise_data_dir=args.noisy_dataset_path, noisy_dataset=args.noisy_dataset,
                                    transform=MixTransform(strong_transform=strong_transform, weak_transform=weak_transform, K=1),
-                                   open_ratio=args.open_ratio,
+                                   #open_ratio=args.open_ratio,
                                    dataset_mode='train', noise_ratio=args.noise_ratio, noise_mode=args.noise_mode,
-                                   noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
-                                # noise_file='%s/%.2f_%s.json'%(args.dataset_path,args.noise_ratio,args.noise_mode))
-                                # noise_file='../noise/%.2f_%s.json'%(args.noise_ratio,args.noise_mode))
+                                   #noise_file=f'{args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode}_noise.json')
+                                   noise_file=f'{args.dataset}_{args.noise_ratio}_{args.noise_mode}_noise.json')
+                                
 
     # extract noisy labels and clean labels for performance monitoring
-    # import pdb; pdb.set_trace()
+    
     noisy_label = torch.tensor(eval_data.cifar_label).cuda()
     clean_label = torch.tensor(eval_data.clean_label).cuda()
 
@@ -688,9 +547,7 @@ def main():
         'pred_head': pred_head.state_dict(),
         'optimizer': optimizer.state_dict(),
     }, filename=f'{args.dataset}/{args.run_path}/last.pth.tar')
-    # wandb.summary['test_accuracy_best'] = best_acc
-    # wandb.summary['test_accuracy_avg_last10'] = sum(all_acc[-10:])/10.0
-    # wandb.finish()
+    
 
 
 if __name__ == '__main__':
