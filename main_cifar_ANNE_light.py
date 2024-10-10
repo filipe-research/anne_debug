@@ -2,12 +2,12 @@ import argparse
 
 import torch.optim.lr_scheduler
 import torchvision.transforms as transforms
-import wandb
+# import wandb
 from torch.optim import SGD
 from torch.utils.data import Subset
 from tqdm import tqdm
 
-from datasets.dataloader_cifar_filipe import cifar_dataset
+from datasets.dataloader_cifar import cifar_dataset
 from models.preresnet import PreResNet18
 from sklearn.mixture import GaussianMixture
 from utils import *
@@ -38,7 +38,7 @@ parser.add_argument('--momentum', default=0.9, type=float, metavar='M', help='mo
 parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight decay (default: 5e-4)')
 parser.add_argument('--seed', default=3047, type=int, help='seed for initializing training. (default: 3047)')
 parser.add_argument('--gpuid', default='0', type=str, help='Selected GPU (default: "0")')
-parser.add_argument('--entity', type=str, help='Wandb user entity')
+# parser.add_argument('--entity', type=str, help='Wandb user entity')
 parser.add_argument('--run_path', type=str, help='run path containing all results')
 parser.add_argument('--exp-name', type=str, default='')
 # parser.add_argument('--radius', default=0.98, type=float, help='radius epsilon')
@@ -114,7 +114,7 @@ def train(labeled_trainloader, modified_label, all_trainloader, encoder, classif
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-    logger.log({'ce loss': xlosses.avg, 'fc loss': ulosses.avg, 'epoch':epoch})
+    # logger.log({'ce loss': xlosses.avg, 'fc loss': ulosses.avg, 'epoch':epoch})
 
 
 def test(testloader, encoder, classifier, epoch):
@@ -131,7 +131,7 @@ def test(testloader, encoder, classifier, epoch):
             acc = torch.sum(pred == label) / float(data.size(0))
             accuracy.update(acc.item(), data.size(0))
             data_bar.set_description(f'Test epoch {epoch}: Accuracy#{accuracy.avg:.4f}')
-    logger.log({'acc': accuracy.avg, 'epoch':epoch})
+    # logger.log({'acc': accuracy.avg, 'epoch':epoch})
     return accuracy.avg
 
 
@@ -268,12 +268,12 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
         TN = torch.sum(modified_label[noisy_id] != clean_label[noisy_id])
         FN = torch.sum(modified_label[noisy_id] == clean_label[noisy_id])
         print(f'Epoch [{i}/{args.epochs}] selection: theta_s:{args.theta_s} TP: {TP} FP:{FP} TN:{TN} FN:{FN}')
-        logger.log({'TP': TP, 'FP': FP, 'TN': TN, 'FN': FN, 'epoch':i})
+        # logger.log({'TP': TP, 'FP': FP, 'TN': TN, 'FN': FN, 'epoch':i})
 
         correct = torch.sum(modified_label[conf_id] == clean_label[conf_id])
         orginal = torch.sum(noisy_label[conf_id] == clean_label[conf_id])
         all = len(conf_id)
-        logger.log({'correct': correct, 'original': orginal, 'total': all, 'epoch':i})
+        # logger.log({'correct': correct, 'original': orginal, 'total': all, 'epoch':i})
         print(f'Epoch [{i}/{args.epochs}] relabelling:  correct: {correct} original: {orginal} total: {all}')
 
         stat_logs.write(f'Epoch [{i}/{args.epochs}] selection: theta_s:{args.theta_s} TP: {TP} FP:{FP} TN:{TN} FN:{FN}\n')
@@ -331,45 +331,45 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
                 
 
 
-            wandb.log({"selection/TP":TP,
-                       "selection/FP":FP,
-                       "selection/TN":TN,
-                       "selection/FN":FN,
-                       "selection/size": len(clean_id),
-                       "selection/clean_rate": 100*TP/(TP+FP),
-                    #    "selection/knn_min": knn_min,
-                    #    "selection/knn_max": knn_max,
-                       "relabelling/num_modified": all,
-                       "relabelling/true_before":orginal,
-                       "relabelling/true_after":correct,
-                       "relabelling/clean_rate_after":100*correct/all,
-                       "relabelling/clean_rate_before":100*orginal/all,
-                       "epoch":i,
-                       "selection/precision": precision,
-                       "selection/recall": recall,
-                       "selection/f1": 2*(precision*recall)/(precision+recall),
-                       "selection/g1g2_TP":len(TP_ids['g1g2']),
-                       "selection/g1g2_FP":len(FP_ids['g1g2']),
-                       "selection/g1g2_TN":len(TN_ids['g1g2']),
-                       "selection/g1g2_FN":len(FN_ids['g1g2']),
-                       "selection/g1g2_precision":g1g2_precision,
-                       "selection/g1g2_recall":g1g2_recall,
-                       "selection/g1g2_f1":2*(g1g2_precision*g1g2_recall)/(g1g2_precision+g1g2_recall),
-                       "selection/g3g4_TP":len(TP_ids['g3g4']),
-                       "selection/g3g4_FP":len(FP_ids['g3g4']),
-                       "selection/g3g4_TN":len(TN_ids['g3g4']),
-                       "selection/g3g4_FN":len(FN_ids['g3g4']),
-                       "selection/g3g4_precision":g3g4_precision,
-                       "selection/g3g4_recall":g3g4_recall,
-                       "selection/g3g4_f1":2*(g3g4_precision*g3g4_recall)/(g3g4_precision+g3g4_recall),
-                       "choice_sr_g1g2": choice_sr_g1g2,
-                       "choice_sr_g3g4": choice_sr_g3g4,
-                       "fine_g1g2_sr": fine_g1g2_sr,
-                       "fine_g3g4_sr": fine_g3g4_sr,
-                       "ssr_g1g2_sr": ssr_g1g2_sr,
-                       "ssr_g3g4_sr": ssr_g3g4_sr
+            # wandb.log({"selection/TP":TP,
+            #            "selection/FP":FP,
+            #            "selection/TN":TN,
+            #            "selection/FN":FN,
+            #            "selection/size": len(clean_id),
+            #            "selection/clean_rate": 100*TP/(TP+FP),
+            #         #    "selection/knn_min": knn_min,
+            #         #    "selection/knn_max": knn_max,
+            #            "relabelling/num_modified": all,
+            #            "relabelling/true_before":orginal,
+            #            "relabelling/true_after":correct,
+            #            "relabelling/clean_rate_after":100*correct/all,
+            #            "relabelling/clean_rate_before":100*orginal/all,
+            #            "epoch":i,
+            #            "selection/precision": precision,
+            #            "selection/recall": recall,
+            #            "selection/f1": 2*(precision*recall)/(precision+recall),
+            #            "selection/g1g2_TP":len(TP_ids['g1g2']),
+            #            "selection/g1g2_FP":len(FP_ids['g1g2']),
+            #            "selection/g1g2_TN":len(TN_ids['g1g2']),
+            #            "selection/g1g2_FN":len(FN_ids['g1g2']),
+            #            "selection/g1g2_precision":g1g2_precision,
+            #            "selection/g1g2_recall":g1g2_recall,
+            #            "selection/g1g2_f1":2*(g1g2_precision*g1g2_recall)/(g1g2_precision+g1g2_recall),
+            #            "selection/g3g4_TP":len(TP_ids['g3g4']),
+            #            "selection/g3g4_FP":len(FP_ids['g3g4']),
+            #            "selection/g3g4_TN":len(TN_ids['g3g4']),
+            #            "selection/g3g4_FN":len(FN_ids['g3g4']),
+            #            "selection/g3g4_precision":g3g4_precision,
+            #            "selection/g3g4_recall":g3g4_recall,
+            #            "selection/g3g4_f1":2*(g3g4_precision*g3g4_recall)/(g3g4_precision+g3g4_recall),
+            #            "choice_sr_g1g2": choice_sr_g1g2,
+            #            "choice_sr_g3g4": choice_sr_g3g4,
+            #            "fine_g1g2_sr": fine_g1g2_sr,
+            #            "fine_g3g4_sr": fine_g3g4_sr,
+            #            "ssr_g1g2_sr": ssr_g1g2_sr,
+            #            "ssr_g3g4_sr": ssr_g3g4_sr
                         
-            })
+            # })
     #return clean_id, noisy_id, modified_label
     return clean_id, None, modified_label
 
@@ -546,14 +546,14 @@ def main():
         args.run_path = args.exp_name
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpuid
-    global logger
-    #logger = wandb.init(project=args.dataset, entity=args.entity, name=args.run_path, group=args.dataset)
-    logger = wandb.init(project="noisy_labels",entity=args.entity, name=args.exp_name, allow_val_change=True)
-    logger.config.update(args)
-    if args.open_ratio == 0:
-        logger.config.update({"dataset": f"{args.dataset}"}, allow_val_change=True)
-    else:
-        logger.config.update({"dataset": f"{args.dataset}+open_{args.noisy_dataset}"}, allow_val_change=True)
+    # global logger
+    
+    #logger = wandb.init(project="noisy_labels",entity=args.entity, name=args.exp_name, allow_val_change=True)
+    #logger.config.update(args)
+    # if args.open_ratio == 0:
+    #     logger.config.update({"dataset": f"{args.dataset}"}, allow_val_change=True)
+    # else:
+    #     logger.config.update({"dataset": f"{args.dataset}+open_{args.noisy_dataset}"}, allow_val_change=True)
 
     # generate noisy dataset with our transformation
     if not os.path.isdir(f'{args.dataset}'):
@@ -688,9 +688,9 @@ def main():
         'pred_head': pred_head.state_dict(),
         'optimizer': optimizer.state_dict(),
     }, filename=f'{args.dataset}/{args.run_path}/last.pth.tar')
-    wandb.summary['test_accuracy_best'] = best_acc
-    wandb.summary['test_accuracy_avg_last10'] = sum(all_acc[-10:])/10.0
-    wandb.finish()
+    # wandb.summary['test_accuracy_best'] = best_acc
+    # wandb.summary['test_accuracy_avg_last10'] = sum(all_acc[-10:])/10.0
+    # wandb.finish()
 
 
 if __name__ == '__main__':
