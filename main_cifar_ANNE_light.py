@@ -181,7 +181,7 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
             elif args.ssrset == "full":
                 #prediction_knn = fast_weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, kmax=args.kmax, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
                 #prediction_knn = fast_weighted_knn_ball( feature_bank, feature_bank, modified_label, args.num_classes, chunks=200,  rule=args.rule,  radaptive=args.radaptive, otsu_split=otsu_split, kmax=args.kmax, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
-                prediction_knn = fast_weighted_knn_ball( feature_bank, feature_bank, modified_label, args.num_classes, chunks=200, otsu_split=otsu_split, kmax=args.kmax, kmin1=args.kmin1, kmin2=args.kmin2, , step=args.step )  # temperature in weighted KNN
+                prediction_knn = fast_weighted_knn_ball( feature_bank, feature_bank, modified_label, args.num_classes, chunks=200, otsu_split=otsu_split, kmax=args.kmax, kmin1=args.kmin1, kmin2=args.kmin2,  step=args.step )  # temperature in weighted KNN
                 vote_y = torch.gather(prediction_knn, 1, modified_label.view(-1, 1)).squeeze()
         else:
             #prediction_knn = weighted_knn(feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10)
