@@ -39,7 +39,7 @@ parser.add_argument('--weight_decay', default=5e-4, type=float, help='weight dec
 parser.add_argument('--seed', default=3047, type=int, help='seed for initializing training. (default: 3047)')
 parser.add_argument('--gpuid', default='0', type=str, help='Selected GPU (default: "0")')
 # parser.add_argument('--entity', type=str, help='Wandb user entity')
-parser.add_argument('--run_path', type=str, help='run path containing all results')
+# parser.add_argument('--run_path', type=str, help='run path containing all results')
 parser.add_argument('--exp-name', type=str, default='')
 # parser.add_argument('--radius', default=0.98, type=float, help='radius epsilon')
 parser.add_argument('--rule', type=str, default='type1')
@@ -410,18 +410,20 @@ def main():
     args = parser.parse_args()
     seed_everything(args.seed)
     
-    if args.run_path is None:
-        #args.run_path = f'Dataset({args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode})_Model({args.theta_r}_{args.theta_s})'
-        args.run_path = f'Dataset({args.dataset}_{args.noise_ratio}_{args.noise_mode})_Model({args.theta_r}_{args.theta_s})'
-        args.run_path = args.exp_name
+    # if args.run_path is None:
+    #     #args.run_path = f'Dataset({args.dataset}_{args.noise_ratio}_{args.open_ratio}_{args.noise_mode})_Model({args.theta_r}_{args.theta_s})'
+    #     args.run_path = f'Dataset({args.dataset}_{args.noise_ratio}_{args.noise_mode})_Model({args.theta_r}_{args.theta_s})'
+    #     args.run_path = args.exp_name
 
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpuid
 
     # generate noisy dataset with our transformation
     if not os.path.isdir(f'{args.dataset}'):
         os.mkdir(f'{args.dataset}')
-    if not os.path.isdir(f'{args.dataset}/{args.run_path}'):
-        os.mkdir(f'{args.dataset}/{args.run_path}')
+    #if not os.path.isdir(f'{args.dataset}/{args.run_path}'):
+    if not os.path.isdir(f'{args.dataset}/{args.exp_name}'):
+        #os.mkdir(f'{args.dataset}/{args.run_path}')
+        os.mkdir(f'{args.dataset}/{args.exp_name}')
 
     ############################# Dataset initialization ##############################################
     if args.dataset == 'cifar10':
@@ -508,9 +510,9 @@ def main():
                     lr=args.lr, weight_decay=args.weight_decay, momentum=args.momentum)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=args.lr/50.0)
 
-    acc_logs = open(f'{args.dataset}/{args.run_path}/acc.txt', 'w')
-    stat_logs = open(f'{args.dataset}/{args.run_path}/stat.txt', 'w')
-    save_config(args, f'{args.dataset}/{args.run_path}')
+    acc_logs = open(f'{args.dataset}/{args.exp_name}/acc.txt', 'w')
+    stat_logs = open(f'{args.dataset}/{args.exp_name}/stat.txt', 'w')
+    save_config(args, f'{args.dataset}/{args.exp_name}')
     print('Train args: \n', args)
     best_acc = 0
     all_acc = []
@@ -538,7 +540,7 @@ def main():
                 'proj_head': proj_head.state_dict(),
                 'pred_head': pred_head.state_dict(),
                 'optimizer': optimizer.state_dict(),
-            }, filename=f'{args.dataset}/{args.run_path}/best_acc.pth.tar')
+            }, filename=f'{args.dataset}/{args.exp_name}/best_acc.pth.tar')
         acc_logs.write(f'Epoch [{i}/{args.epochs}]: Best accuracy@{best_acc}! Current accuracy@{cur_acc} \n')
         acc_logs.flush()
         print(f'Epoch [{i}/{args.epochs}]: Best accuracy@{best_acc}! Current accuracy@{cur_acc} \n')
@@ -550,7 +552,7 @@ def main():
         'proj_head': proj_head.state_dict(),
         'pred_head': pred_head.state_dict(),
         'optimizer': optimizer.state_dict(),
-    }, filename=f'{args.dataset}/{args.run_path}/last.pth.tar')
+    }, filename=f'{args.dataset}/{args.exp_name}/last.pth.tar')
     
 
 
