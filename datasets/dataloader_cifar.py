@@ -18,7 +18,8 @@ def unpickle(file):
     return dict
 
 class cifar_dataset(Dataset):
-    def __init__(self, dataset, noisy_dataset, root_dir, noise_data_dir, transform,  noise_mode='sym',
+    #def __init__(self, dataset, noisy_dataset, root_dir, noise_data_dir, transform,  noise_mode='sym',
+    def __init__(self, dataset, root_dir,  transform,  noise_mode='sym',
                  dataset_mode='train', noise_ratio=0.5,  noise_file=None):
 
         self.r = noise_ratio  # total noise ratio
@@ -60,8 +61,8 @@ class cifar_dataset(Dataset):
             # if noisy_dataset == 'imagenet32':
             #     noise_data = None
             # else:
-            noise_data = unpickle('%s/cifar-100-python/train' % noise_data_dir)['data'].reshape((50000, 3, 32, 32)).transpose(
-                (0, 2, 3, 1))
+            # noise_data = unpickle('%s/cifar-100-python/train' % noise_data_dir)['data'].reshape((50000, 3, 32, 32)).transpose(
+            #     (0, 2, 3, 1))
             
 
             if os.path.exists(noise_file):
