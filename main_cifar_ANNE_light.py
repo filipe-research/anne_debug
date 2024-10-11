@@ -13,7 +13,7 @@ from sklearn.mixture import GaussianMixture
 from utils import *
 
 parser = argparse.ArgumentParser('Train with synthetic cifar noisy dataset')
-parser.add_argument('--dataset_path', default='~/CIFAR/CIFAR10', help='dataset path')
+parser.add_argument('--dataset_path', default='~/data', help='dataset path')
 # parser.add_argument('--noisy_dataset_path', default='~/CIFAR/CIFAR100', help='open-set noise dataset path')
 parser.add_argument('--dataset', default='cifar10', help='dataset name')
 # parser.add_argument('--noisy_dataset', default='cifar100', help='open-set noise dataset name')
@@ -27,7 +27,7 @@ parser.add_argument('--noise_ratio', default=0.5, type=float, help='artifical no
 parser.add_argument('--theta_s', default=1.0, type=float, help='threshold for selecting samples (default: 1)')
 parser.add_argument('--theta_r', default=0.9, type=float, help='threshold for relabelling samples (default: 0.9)')
 parser.add_argument('--lambda_fc', default=1.0, type=float, help='weight of feature consistency loss (default: 1.0)')
-parser.add_argument('--k', default=200, type=int, help='neighbors for knn sample selection (default: 200)')
+# parser.add_argument('--k', default=200, type=int, help='neighbors for knn sample selection (default: 200)')
 
 # train settings
 parser.add_argument('--model', default='PreResNet18', help=f'model architecture (default: PreResNet18)')
@@ -170,14 +170,18 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
             aknn_ids = torch.cat((otsu_split['maybe_noisy_ids'].squeeze(), otsu_split['noisy_ids'].squeeze()))
 
             if args.ssrset == "full":
-                prediction_knn = fast_weighted_knn_ball(i, feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+                #prediction_knn = fast_weighted_knn_ball(i, feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+                #prediction_knn = fast_weighted_knn_ball(i, feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+                prediction_knn = fast_weighted_knn_ball( feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, chunks=200,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
                 vote_y = torch.gather(prediction_knn, 1, modified_label[aknn_ids].view(-1, 1)).squeeze()
 
             elif args.ssrset == "lcs":
-                prediction_knn = fast_weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+                #prediction_knn = fast_weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+                prediction_knn = fast_weighted_knn_ball( feature_bank, feature_bank, modified_label, args.num_classes, chunks=200,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
                 vote_y = torch.gather(prediction_knn, 1, modified_label.view(-1, 1)).squeeze()
         else:
-            prediction_knn = weighted_knn(feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10)
+            #prediction_knn = weighted_knn(feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10)
+            prediction_knn = weighted_knn(feature_bank, feature_bank, modified_label, args.num_classes, 200, 10)
             vote_y = torch.gather(prediction_knn, 1, modified_label.view(-1, 1)).squeeze()
 
         vote_max = prediction_knn.max(dim=1)[0]

@@ -1586,7 +1586,7 @@ def aknn_predict(id, feature, feature_bank, feature_labels, classes, rule="type1
     #return pred_score, pred_labels, knn_k
     return pred_score, pred_labels
 
-def fast_weighted_knn_ball(epoch, cur_feature, feature, label, num_classes, chunks=10, norm='global', rule="type1",conf=None, radaptive=None, otsu_split=None,teto=200, kmin1=40, kmin2=80):
+def fast_weighted_knn_ball( cur_feature, feature, label, num_classes, chunks=10, norm='global', rule="type1",conf=None, radaptive=None, otsu_split=None,teto=200, kmin1=40, kmin2=80):
     # distributed fast KNN and sample selection with three different modes
     num = len(cur_feature)
     num_class = torch.tensor([torch.sum(label == i).item() for i in range(num_classes)]).to(
