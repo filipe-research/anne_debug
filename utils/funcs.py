@@ -1419,7 +1419,7 @@ def ball_predict(id,epoch, feature, feature_bank, feature_labels, classes, radiu
     pred_labels = pred_scores.argmax(dim=-1)
     return pred_scores, pred_labels, knn_k
 
-def aknn_predict(id, feature, feature_bank, feature_labels, classes,  otsu_split=None,kmax=200, kmin1=40, kmin2=80):
+def aknn_predict(id, feature, feature_bank, feature_labels, classes,  otsu_split=None,kmax=200, kmin1=40, kmin2=80, step=0.03):
     # compute cos similarity between each feature vector and feature bank ---> [B, N]
     sim_matrix = torch.mm(feature, feature_bank)
     # sim_matrix = torch.mm(feature, feature_bank.T)  # Transpose feature_bank for matrix multiplication
@@ -1445,7 +1445,8 @@ def aknn_predict(id, feature, feature_bank, feature_labels, classes,  otsu_split
     # mask = sim_matrix>temp_radius
     # kmask = torch.sum(sim_matrix>temp_radius,-1)
     #step = 0.01
-    step = 0.03
+    #step = 0.03
+    step = step
     
     for id in range(sim_matrix.size(0)):
         # if ("otsu" in radaptive) and (otsu_split is not None):
@@ -1580,7 +1581,7 @@ def aknn_predict(id, feature, feature_bank, feature_labels, classes,  otsu_split
     return pred_score, pred_labels
 
 #def fast_weighted_knn_ball( cur_feature, feature, label, num_classes, chunks=10, norm='global', rule="type1",radaptive=None, otsu_split=None,teto=200, kmin1=40, kmin2=80):
-def fast_weighted_knn_ball( cur_feature, feature, label, num_classes, chunks=10, norm='global', otsu_split=None,kmax=200, kmin1=40, kmin2=80):
+def fast_weighted_knn_ball( cur_feature, feature, label, num_classes, chunks=10, norm='global', otsu_split=None,kmax=200, kmin1=40, kmin2=80, step=0.03):
     # distributed fast KNN and sample selection with three different modes
     num = len(cur_feature)
     num_class = torch.tensor([torch.sum(label == i).item() for i in range(num_classes)]).to(
@@ -1613,7 +1614,7 @@ def fast_weighted_knn_ball( cur_feature, feature, label, num_classes, chunks=10,
             #part_score, part_pred, k_value = aknn_predict(i, part_feature, feature.T, label, num_classes, rule,radaptive=radaptive,otsu_split=otsu_split,teto=teto)
             #part_score, part_pred = aknn_predict(i, part_feature, feature.T, label, num_classes, rule,radaptive=radaptive,otsu_split=otsu_split,teto=teto)
             #part_score, part_pred = aknn_predict(i, part_feature, feature.T, label, num_classes, rule,radaptive=radaptive,otsu_split=otsu_split,teto=teto, kmin1=kmin1, kmin2=kmin2)
-            part_score, part_pred = aknn_predict(i, part_feature, feature.T, label, num_classes, otsu_split=otsu_split,kmax=kmax, kmin1=kmin1, kmin2=kmin2)
+            part_score, part_pred = aknn_predict(i, part_feature, feature.T, label, num_classes, otsu_split=otsu_split,kmax=kmax, kmin1=kmin1, kmin2=kmin2, step=step)
             # part_score, part_pred = knn_predict(part_feature, feature.T, label, num_classes, 200)
             # k_value=200
 

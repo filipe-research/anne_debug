@@ -52,9 +52,10 @@ parser.add_argument('--kmax', default=200, type=int, metavar='kmax', help='maxim
 
 parser.add_argument('--distill_mode', type=str, default='fine-gmm', choices=['fine-kmeans','fine-gmm'], help='mode for distillation kmeans or gmm.')
 parser.add_argument('--p_threshold', default=0.5, type=float, help='clean probability threshold')
-parser.add_argument('--ssrset', type=str, default='full', choices=['full','lcs'], help='mode for distillation kmeans or eigen.')
-parser.add_argument('--kmin1', default=40, type=int, metavar='N', help='kmin1')
-parser.add_argument('--kmin2', default=80, type=int, metavar='N', help='kmin2')
+parser.add_argument('--ssrset', type=str, default='full', choices=['full','lcs'], help='aknn applied to full dataset and then filtered, or direct to the filtered set')
+parser.add_argument('--kmin1', default=40, type=int, metavar='k1', help='kmin1')
+parser.add_argument('--kmin2', default=80, type=int, metavar='k2', help='kmin2')
+parser.add_argument('--step', default=0.03, type=float, metavar='st', help='delta step for increase knn radius. ')
 
 
 def train(labeled_trainloader, modified_label, all_trainloader, encoder, classifier, proj_head, pred_head, optimizer, epoch, args):
@@ -170,17 +171,17 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
             ################################### sample selection ###################################
             aknn_ids = torch.cat((otsu_split['maybe_noisy_ids'].squeeze(), otsu_split['noisy_ids'].squeeze()))
 
-            if args.ssrset == "full":
+            if args.ssrset == "lcs":
                 #prediction_knn = fast_weighted_knn_ball(i, feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, kmax=args.kmax, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
                 #prediction_knn = fast_weighted_knn_ball(i, feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, kmax=args.kmax, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
                 #prediction_knn = fast_weighted_knn_ball( feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, chunks=200,  rule=args.rule,   radaptive=args.radaptive, otsu_split=otsu_split, kmax=args.kmax, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
-                prediction_knn = fast_weighted_knn_ball( feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, chunks=200,   otsu_split=otsu_split, kmax=args.kmax, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+                prediction_knn = fast_weighted_knn_ball( feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, chunks=200,   otsu_split=otsu_split, kmax=args.kmax, kmin1=args.kmin1, kmin2=args.kmin2, step=args.step )  # temperature in weighted KNN
                 vote_y = torch.gather(prediction_knn, 1, modified_label[aknn_ids].view(-1, 1)).squeeze()
 
-            elif args.ssrset == "lcs":
+            elif args.ssrset == "full":
                 #prediction_knn = fast_weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, kmax=args.kmax, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
                 #prediction_knn = fast_weighted_knn_ball( feature_bank, feature_bank, modified_label, args.num_classes, chunks=200,  rule=args.rule,  radaptive=args.radaptive, otsu_split=otsu_split, kmax=args.kmax, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
-                prediction_knn = fast_weighted_knn_ball( feature_bank, feature_bank, modified_label, args.num_classes, chunks=200, otsu_split=otsu_split, kmax=args.kmax, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+                prediction_knn = fast_weighted_knn_ball( feature_bank, feature_bank, modified_label, args.num_classes, chunks=200, otsu_split=otsu_split, kmax=args.kmax, kmin1=args.kmin1, kmin2=args.kmin2, , step=args.step )  # temperature in weighted KNN
                 vote_y = torch.gather(prediction_knn, 1, modified_label.view(-1, 1)).squeeze()
         else:
             #prediction_knn = weighted_knn(feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10)
@@ -192,10 +193,10 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
         temp_clean_id = torch.where(right_score >= args.theta_s)[0]
         temp_noisy_id = torch.where(right_score < args.theta_s)[0]
         
-        if args.ssrset == "full":
+        if args.ssrset == "lcs":
             clean_id = aknn_ids[temp_clean_id]
             noisy_id = aknn_ids[temp_noisy_id]
-        elif args.ssrset == "lcs":
+        elif args.ssrset == "full":
             clean_id = temp_clean_id
             noisy_id = temp_noisy_id
             
