@@ -42,11 +42,11 @@ parser.add_argument('--gpuid', default='0', type=str, help='Selected GPU (defaul
 # parser.add_argument('--run_path', type=str, help='run path containing all results')
 parser.add_argument('--exp-name', type=str, default='')
 # parser.add_argument('--radius', default=0.98, type=float, help='radius epsilon')
-parser.add_argument('--rule', type=str, default='type1')
+# parser.add_argument('--rule', type=str, default='type1')
 # parser.add_argument('--knnweight', default=False, action='store_true')
-parser.add_argument('--radaptive', type=str, default=None,
-    choices=[None, 'high', 'low', 'otsu_linear', 'otsu_linear2', 'otsu_linear3', 'otsu_rad', 'otsu_rad2', 
-             'otsu_rad3','otsu_rad4', 'otsu_rad5', 'otsu_rad_inv' ])
+# parser.add_argument('--radaptive', type=str, default=None,
+#     choices=[None, 'high', 'low', 'otsu_linear', 'otsu_linear2', 'otsu_linear3', 'otsu_rad', 'otsu_rad2', 
+#              'otsu_rad3','otsu_rad4', 'otsu_rad5', 'otsu_rad_inv' ])
 parser.add_argument('--warmup', default=0, type=int, metavar='wm', help='number of total warmup')
 parser.add_argument('--teto', default=200, type=int, metavar='teto', help='teto knn')
 parser.add_argument('--distill_mode', type=str, default='eigen', choices=['kmeans','fine-kmeans','fine-gmm'], help='mode for distillation kmeans or eigen.')
@@ -157,14 +157,14 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
 
         otsu_split = None
         if i>=args.warmup:
-            if  "otsu" in args.radaptive:
+            # if  "otsu" in args.radaptive:
                 # import pdb; pdb.set_trace()
-                group_1_clean, group_2_maybe_clean, group_3_maybe_noisy, group_4_noisy = split_dataset(his_score)
-                otsu_split = {'clean_ids':torch.nonzero(group_1_clean),
-                            'maybe_clean_ids': torch.nonzero(group_2_maybe_clean),
-                            'maybe_noisy_ids': torch.nonzero(group_3_maybe_noisy),
-                            'noisy_ids': torch.nonzero(group_4_noisy)
-                }
+            group_1_clean, group_2_maybe_clean, group_3_maybe_noisy, group_4_noisy = split_dataset(his_score)
+            otsu_split = {'clean_ids':torch.nonzero(group_1_clean),
+                        'maybe_clean_ids': torch.nonzero(group_2_maybe_clean),
+                        'maybe_noisy_ids': torch.nonzero(group_3_maybe_noisy),
+                        'noisy_ids': torch.nonzero(group_4_noisy)
+            }
         
             ################################### sample selection ###################################
             aknn_ids = torch.cat((otsu_split['maybe_noisy_ids'].squeeze(), otsu_split['noisy_ids'].squeeze()))
@@ -172,12 +172,14 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
             if args.ssrset == "full":
                 #prediction_knn = fast_weighted_knn_ball(i, feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
                 #prediction_knn = fast_weighted_knn_ball(i, feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
-                prediction_knn = fast_weighted_knn_ball( feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, chunks=200,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+                #prediction_knn = fast_weighted_knn_ball( feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, chunks=200,  rule=args.rule,   radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+                prediction_knn = fast_weighted_knn_ball( feature_bank[aknn_ids], feature_bank[aknn_ids], modified_label[aknn_ids], args.num_classes, chunks=200,   otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
                 vote_y = torch.gather(prediction_knn, 1, modified_label[aknn_ids].view(-1, 1)).squeeze()
 
             elif args.ssrset == "lcs":
                 #prediction_knn = fast_weighted_knn_ball(i, feature_bank, feature_bank, modified_label, args.num_classes, args.k,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
-                prediction_knn = fast_weighted_knn_ball( feature_bank, feature_bank, modified_label, args.num_classes, chunks=200,  rule=args.rule, conf=his_score,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+                #prediction_knn = fast_weighted_knn_ball( feature_bank, feature_bank, modified_label, args.num_classes, chunks=200,  rule=args.rule,  radaptive=args.radaptive, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
+                prediction_knn = fast_weighted_knn_ball( feature_bank, feature_bank, modified_label, args.num_classes, chunks=200, otsu_split=otsu_split, teto=args.teto, kmin1=args.kmin1, kmin2=args.kmin2 )  # temperature in weighted KNN
                 vote_y = torch.gather(prediction_knn, 1, modified_label.view(-1, 1)).squeeze()
         else:
             #prediction_knn = weighted_knn(feature_bank, feature_bank, modified_label, args.num_classes, args.k, 10)
