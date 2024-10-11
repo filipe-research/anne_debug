@@ -91,7 +91,7 @@ class cifar_dataset(Dataset):
                 num_total_noise = int(self.r * 50000)  # total amount of noise
                 #num_open_noise = int(self.on * num_total_noise)  # total amount of noisy/openset images
                 print('Statistics of synthetic noisy CIFAR dataset: ', 'num of clean samples: ', 50000 - num_total_noise,
-                      ' num of closed-set noise: ', num_total_noise , ' num of open-set noise: ')
+                      ' num of closed-set noise: ', num_total_noise )
                     #   ' num of closed-set noise: ', num_total_noise - num_open_noise, ' num of open-set noise: ', num_open_noise)
                 # print(num_open_noise, num_total_noise)
                 # if noisy_dataset == 'imagenet32':  # indices of openset source images
