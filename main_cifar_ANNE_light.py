@@ -49,7 +49,8 @@ parser.add_argument('--exp-name', type=str, default='')
 #              'otsu_rad3','otsu_rad4', 'otsu_rad5', 'otsu_rad_inv' ])
 parser.add_argument('--warmup', default=0, type=int, metavar='wm', help='number of total warmup')
 parser.add_argument('--kmax', default=200, type=int, metavar='kmax', help='maximum value of ')
-parser.add_argument('--distill_mode', type=str, default='eigen', choices=['kmeans','fine-kmeans','fine-gmm'], help='mode for distillation kmeans or eigen.')
+
+parser.add_argument('--distill_mode', type=str, default='fine-gmm', choices=['fine-kmeans','fine-gmm'], help='mode for distillation kmeans or gmm.')
 parser.add_argument('--p_threshold', default=0.5, type=float, help='clean probability threshold')
 parser.add_argument('--ssrset', type=str, default='full', choices=['full','lcs'], help='mode for distillation kmeans or eigen.')
 parser.add_argument('--kmin1', default=40, type=int, metavar='N', help='kmin1')
@@ -389,15 +390,15 @@ def cleansing(scores, labels):
     return np.array(clean_labels, dtype=np.int64)
     
 
-def extract_cleanidx(features, labels, mode='fine-kmeans', p_threshold=0.6):
+def extract_cleanidx(features, labels, mode='fine-gmm', p_threshold=0.6):
     # model.eval()
     scores=None
     # for params in model.parameters(): params.requires_grad = False
         
     # get teacher_idx
-    if 'fine' in mode:
+    # if 'fine' in mode:
         # features, labels = get_features(model, loader)
-        teacher_idx, probs, scores = fine(current_features=features, current_labels=labels, fit = mode, p_threshold=p_threshold)
+    teacher_idx, probs, scores = fine(current_features=features, current_labels=labels, fit = mode, p_threshold=p_threshold)
     # else: # get teacher _idx via kmeans
     #     teacher_idx = get_loss_list(model, loader)
     #     probs = None
