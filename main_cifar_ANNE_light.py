@@ -25,7 +25,8 @@ parser.add_argument('--noise_ratio', default=0.5, type=float, help='artifical no
 
 # model settings
 parser.add_argument('--theta_s', default=1.0, type=float, help='threshold for selecting samples (default: 1)')
-parser.add_argument('--theta_r', default=0.9, type=float, help='threshold for relabelling samples (default: 0.9)')
+parser.add_argument('--theta_r', default=0.9, type=float, help='threshold for relabelling samples (\gamma_r)')
+parser.add_argument('--p_threshold', default=0.5, type=float, help='clean probability threshold (\gamma_e)')
 parser.add_argument('--lambda_fc', default=1.0, type=float, help='weight of feature consistency loss (default: 1.0)')
 # parser.add_argument('--k', default=200, type=int, help='neighbors for knn sample selection (default: 200)')
 
@@ -51,7 +52,7 @@ parser.add_argument('--warmup', default=0, type=int, metavar='wm', help='number 
 parser.add_argument('--kmax', default=200, type=int, metavar='kmax', help='maximum value of ')
 
 parser.add_argument('--distill_mode', type=str, default='fine-gmm', choices=['fine-kmeans','fine-gmm'], help='mode for distillation kmeans or gmm.')
-parser.add_argument('--p_threshold', default=0.5, type=float, help='clean probability threshold')
+
 parser.add_argument('--ssrset', type=str, default='full', choices=['full','lcs'], help='aknn applied to full dataset and then filtered, or direct to the filtered set')
 parser.add_argument('--kmin1', default=40, type=int, metavar='k1', help='kmin1')
 parser.add_argument('--kmin2', default=80, type=int, metavar='k2', help='kmin2')
