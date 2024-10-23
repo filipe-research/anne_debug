@@ -48,7 +48,7 @@ parser.add_argument('--exp-name', type=str, default='')
 # parser.add_argument('--radaptive', type=str, default=None,
 #     choices=[None, 'high', 'low', 'otsu_linear', 'otsu_linear2', 'otsu_linear3', 'otsu_rad', 'otsu_rad2', 
 #              'otsu_rad3','otsu_rad4', 'otsu_rad5', 'otsu_rad_inv' ])
-parser.add_argument('--warmup', default=0, type=int, metavar='wm', help='number of total warmup')
+parser.add_argument('--warmup', default=0, type=int, metavar='wm', help='number of total warmups')
 parser.add_argument('--kmax', default=200, type=int, metavar='kmax', help='maximum value of ')
 parser.add_argument('--chunks', default=200, type=int, metavar='kmax', help='maximum value of ')
 
@@ -168,8 +168,9 @@ def evaluate(dataloader, encoder, classifier, args, noisy_label, clean_label, i,
                         'maybe_clean_ids': torch.nonzero(group_2_maybe_clean),
                         'maybe_noisy_ids': torch.nonzero(group_3_maybe_noisy),
                         'noisy_ids': torch.nonzero(group_4_noisy)
+
             }
-        
+            #print
             ################################### sample selection ###################################
             aknn_ids = torch.cat((otsu_split['maybe_noisy_ids'].squeeze(), otsu_split['noisy_ids'].squeeze()))
 
